@@ -7,6 +7,8 @@
 
 const char* ssid = "can";         
 const char* password = "can.bjk2005";   
+//const char* ssid = "KMLAKGN";         
+//const char* password = "qazxsw123456";  
 
 const String sunucuURL = "http:// 10.254.207.155/otopark/api.php"; 
 
