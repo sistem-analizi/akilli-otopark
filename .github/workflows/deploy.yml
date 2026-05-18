@@ -1,0 +1,26 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: sistem-analizi/ci/.github/workflows/deploy.yml@v1
+    with:
+      build_type: php
+      year: '2026'
+      php_version: '8.4'
+
+      clean_slate: false
+
+      exclude: |
+        **/*.db
+        **/*.db-journal
+        **/*.db-wal
+        **/*.db-shm
+        **/.env
+        **/.env.*
+
+    secrets: inherit
