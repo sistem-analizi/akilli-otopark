@@ -85,6 +85,7 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
         const arabaVerileri = {
             "Audi": ["A3", "A4", "A6", "Q3", "Q5", "Q7"],
             "BMW": ["1 Serisi", "3 Serisi", "5 Serisi", "X3", "X5"],
+            "Cupra": ["Formentor", "Leon", "Ateca", "Born"],
             "Fiat": ["Egea", "Fiorino", "Linea", "Punto", "Doblo"],
             "Ford": ["Focus", "Fiesta", "Courier", "Kuga", "Puma"],
             "Honda": ["Civic", "CR-V", "City", "Accord"],
@@ -92,15 +93,16 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             "Renault": ["Megane", "Clio", "Symbol", "Taliant", "Captur"],
             "Toyota": ["Corolla", "Yaris", "C-HR", "Hilux"],
             "Volkswagen": ["Golf", "Passat", "Polo", "Tiguan", "T-Roc"],
-            "Togg": ["T10X"],
-            "Cupra":{"Born","Formentor","Leon","Terramar","Ateca"]
+            "Togg": ["T10X"]
         };
 
         function markaSecildi() {
             const markaSelect = document.getElementById("markaSelect");
             const modelSelect = document.getElementById("modelSelect");
-            const secilenMarka = markaSelect.value;
             
+            if(!markaSelect || !modelSelect) return;
+            
+            const secilenMarka = markaSelect.value;
             modelSelect.innerHTML = '<option value="">Önce Model Seçin</option>';
             
             if(secilenMarka && arabaVerileri[secilenMarka]) {
@@ -123,30 +125,43 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             document.querySelectorAll('.sekme-buton').forEach(el => el.classList.remove('bg-blue-600', 'text-white', 'shadow-lg'));
             document.querySelectorAll('.sekme-buton').forEach(el => el.classList.add('bg-white', 'text-gray-600'));
             
-            document.getElementById(sekmeAdi).classList.remove('hidden');
-            document.getElementById('btn-' + sekmeAdi).classList.remove('bg-white', 'text-gray-600');
-            document.getElementById('btn-' + sekmeAdi).classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+            let icerik = document.getElementById(sekmeAdi);
+            let buton = document.getElementById('btn-' + sekmeAdi);
+            
+            if(icerik) icerik.classList.remove('hidden');
+            if(buton) {
+                buton.classList.remove('bg-white', 'text-gray-600');
+                buton.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+            }
         }
 
         function modalAc(slotAdi) {
-            document.getElementById('secilen_slot').value = slotAdi;
-            document.getElementById('modal_slot_isim').innerText = slotAdi.toUpperCase();
+            let secilenSlotInp = document.getElementById('secilen_slot');
+            let modalIsim = document.getElementById('modal_slot_isim');
+            let modal = document.getElementById('rezervasyon_modal');
+            
+            if(secilenSlotInp) secilenSlotInp.value = slotAdi;
+            if(modalIsim) modalIsim.innerText = slotAdi.toUpperCase();
+            
             hesapla();
-            document.getElementById('rezervasyon_modal').classList.remove('hidden');
+            
+            if(modal) modal.classList.remove('hidden');
         }
 
         function modalKapat() {
-            document.getElementById('rezervasyon_modal').classList.add('hidden');
+            let modal = document.getElementById('rezervasyon_modal');
+            if(modal) modal.classList.add('hidden');
         }
         
-      function hesapla() {
-    let sureSecim = document.getElementById('sure_secim');
-    if(sureSecim) {
-        let sure = sureSecim.value;
-        let fiyat = <?= $ayarlar['taban_fiyat'] ?>;
-        document.getElementById('toplam_tutar').innerText = sure * fiyat;
-    }
-}
+        function hesapla() {
+            let sureSecim = document.getElementById('sure_secim');
+            let tutarAlan = document.getElementById('toplam_tutar');
+            
+            if(sureSecim && tutarAlan) {
+                let sure = parseInt(sureSecim.value) || 1;
+                let fiyat = <?= isset($ayarlar['taban_fiyat']) ? (int)$ayarlar['taban_fiyat'] : 50 ?>;
+                tutarAlan.innerText = sure * fiyat;
+            }
         }
     </script>
 </head>
@@ -267,6 +282,7 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
                                         <option value="">Marka Seçiniz</option>
                                         <option value="Audi">Audi</option>
                                         <option value="BMW">BMW</option>
+                                        <option value="Cupra">Cupra</option>
                                         <option value="Fiat">Fiat</option>
                                         <option value="Ford">Ford</option>
                                         <option value="Honda">Honda</option>
@@ -457,7 +473,7 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
 
                 <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-6 flex justify-between items-center shadow-sm">
                     <span class="font-bold text-indigo-900 text-sm uppercase">Ödenecek Tutar</span>
-                    <span class="font-black text-2xl text-indigo-600"><span id="toplam_tutar"><?= $ayarlar['taban_fiyat'] ?></span> TL</span>
+                    <span class="font-black text-2xl text-indigo-600"><span id="toplam_tutar"><?= isset($ayarlar['taban_fiyat']) ? $ayarlar['taban_fiyat'] : 50 ?></span> TL</span>
                 </div>
 
                 <div class="flex gap-3">
@@ -474,7 +490,7 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
                 </div>
                 <div class="flex gap-3 mt-6">
                     <button type="button" onclick="modalKapat()" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-4 rounded-xl transition">İPTAL</button>
-                    <button type="button" onclick="modalKapat(); sekmeDegistir('profil');" class="w-2/3 bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-xl transition shadow-lg">ARAÇ EKLEMEYE GİT</button>
+                    <button type="button" onclick="modalKapat(); sekmeDegistir('araclar');" class="w-2/3 bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-xl transition shadow-lg">ARAÇ EKLEMEYE GİT</button>
                 </div>
             <?php endif; ?>
         </div>
