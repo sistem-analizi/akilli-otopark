@@ -1,10 +1,3 @@
-Ekranda fiyatın değiştiğinin çok daha **net ve profesyonel** bir şekilde görünmesi için Dinamik Fiyatlandırma algoritmasının eşiklerini güncelledim ve ekrana harika bir "Canlı Fiyat Tablosu" ekledim.
-
-Artık otoparkta **1 araç bile olsa (%25 doluluk)** sistem anında dinamik fiyatlandırmayı devreye sokacak ve rezerve etme ekranında (Modal) kullanıcının gözünün önünde eski fiyatın üzerini çizip yeni zamlı fiyatı hesaplayacak.
-
-**`uye_paneli.php`** dosyanın içindeki tüm kodları silip aşağıdakini yapıştır:
-
-```php
 <?php
 session_start();
 error_reporting(E_ALL);
