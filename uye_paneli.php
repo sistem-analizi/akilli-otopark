@@ -1,5 +1,7 @@
 <?php
 session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include 'baglanti.php';
 
 if (!isset($_SESSION['kullanici_id']) || $_SESSION['rol'] == 'admin') {
@@ -9,13 +11,10 @@ if (!isset($_SESSION['kullanici_id']) || $_SESSION['rol'] == 'admin') {
 
 $uye_id = $_SESSION['kullanici_id'];
 
-// ÜYE KAPI KONTROL İŞLEMİ (YENİ)
 if(isset($_POST['uye_kapi_kontrol'])) {
-    error_reporting(0);
     $kapi = $conn->real_escape_string($_POST['kapi_adi']);
     $durum = (int)$_POST['durum'];
     
-    // Güvenlik: Kullanıcının gerçekten o kapıda aktif rezervasyonu var mı?
     $kontrol_sql = "SELECT id FROM rezervasyonlar WHERE slot_adi='$kapi' AND uye_id=$uye_id AND durum='aktif'";
     if ($conn->query($kontrol_sql)->num_rows > 0) {
         $conn->query("UPDATE cihaz_kontrol SET $kapi = $durum WHERE id=1");
@@ -54,15 +53,20 @@ if(isset($_POST['rezervasyon_yap'])) {
     
     $fiyat_sorgu = $conn->query("SELECT taban_fiyat FROM cihaz_kontrol WHERE id = 1");
     $ayarlar = $fiyat_sorgu->fetch_assoc();
-    $toplam_tutar = $sure * $ayarlar['taban_fiyat'];
+    $taban = isset($ayarlar['taban_fiyat']) ? (int)$ayarlar['taban_fiyat'] : 50;
+    $toplam_tutar = $sure * $taban;
     
     $baslangic = date('Y-m-d H:i:s');
     $bitis = date('Y-m-d H:i:s', strtotime("+$sure hours"));
     
     $sql = "INSERT INTO rezervasyonlar (uye_id, arac_id, slot_adi, durum, baslangic_saati, sure, bitis_saati, toplam_tutar, odeme_durumu) VALUES ($uye_id, $arac_id, '$slot_adi', 'aktif', '$baslangic', $sure, '$bitis', $toplam_tutar, 'odendi')";
-    $conn->query($sql);
+    
+    $sonuc = $conn->query($sql);
+    
+    if($sonuc === false) {
+        die("VERİTABANI HATASI: " . $conn->error);
+    }
 
-    // YENİ: Rezerve edilen kapıyı kullanıcının yönetebilmesi için MANUEL (0) moda al
     $conn->query("UPDATE cihaz_kontrol SET {$slot_adi}_mod = 0 WHERE id=1");
 
     header("Location: uye_paneli.php?basari=rezerve_edildi");
@@ -73,7 +77,6 @@ if(isset($_GET['erken_cikis'])) {
     $rez_id = (int)$_GET['erken_cikis'];
     $simdi = date('Y-m-d H:i:s');
 
-    // YENİ: Çıkış yapıldığında kapıyı tekrar sensörlerin (OTOMATİK) yönetebilmesi için 1 yap
     $rez_sorgu = $conn->query("SELECT slot_adi FROM rezervasyonlar WHERE id = $rez_id AND uye_id = $uye_id");
     if($rez_sorgu->num_rows > 0) {
         $rez_bilgi = $rez_sorgu->fetch_assoc();
@@ -89,20 +92,24 @@ if(isset($_GET['erken_cikis'])) {
 
 $araclar_sorgu = $conn->query("SELECT * FROM araclar WHERE uye_id = $uye_id ORDER BY id DESC");
 $araclar = [];
-while($a = $araclar_sorgu->fetch_assoc()) {
-    $araclar[] = $a;
+if($araclar_sorgu) {
+    while($a = $araclar_sorgu->fetch_assoc()) {
+        $araclar[] = $a;
+    }
 }
 
 $rezervasyon_sorgu = $conn->query("SELECT * FROM rezervasyonlar WHERE uye_id = $uye_id ORDER BY id DESC");
 
 $aktif_rez_sorgu = $conn->query("SELECT slot_adi FROM rezervasyonlar WHERE durum = 'aktif'");
 $dolu_slotlar = [];
-while($r = $aktif_rez_sorgu->fetch_assoc()) {
-    $dolu_slotlar[] = $r['slot_adi'];
+if($aktif_rez_sorgu) {
+    while($r = $aktif_rez_sorgu->fetch_assoc()) {
+        $dolu_slotlar[] = $r['slot_adi'];
+    }
 }
 
 $ayarlar_sorgu = $conn->query("SELECT * FROM cihaz_kontrol WHERE id = 1");
-$ayarlar = $ayarlar_sorgu->fetch_assoc();
+$ayarlar = $ayarlar_sorgu ? $ayarlar_sorgu->fetch_assoc() : [];
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -194,7 +201,6 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             }
         }
 
-        // YENİ: KAPI AÇMA/KAPAMA AJAX FONKSİYONU
         function kapiKontrolUye(kapiAdi, durum) {
             let formData = new FormData();
             formData.append('uye_kapi_kontrol', '1');
@@ -205,7 +211,6 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             .then(response => response.text())
             .then(data => {
                 if(data.trim() === 'OK') {
-                    // Kullanıcıya hissettirmek için ufak bir bekleme efekti
                     let buton = event.currentTarget;
                     let orijinalIcerik = buton.innerHTML;
                     buton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İletiliyor...';
@@ -269,8 +274,8 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
                     <?php 
                     for($i=1; $i<=4; $i++): 
                         $slot_adi = "slot" . $i;
-                        $satista_mi = $ayarlar[$slot_adi . '_satis'];
-                        $dolu_mu = (in_array($slot_adi, $dolu_slotlar) || $ayarlar[$slot_adi] == 1);
+                        $satista_mi = isset($ayarlar[$slot_adi . '_satis']) ? $ayarlar[$slot_adi . '_satis'] : 1;
+                        $dolu_mu = (in_array($slot_adi, $dolu_slotlar) || (isset($ayarlar[$slot_adi]) && $ayarlar[$slot_adi] == 1));
                     ?>
                     <div class="border-4 <?= $dolu_mu ? 'border-red-500 bg-red-500/10' : ($satista_mi == 0 ? 'border-gray-600 bg-gray-800' : 'border-dashed border-indigo-400 bg-slate-800 hover:bg-slate-700 hover:border-indigo-300') ?> p-6 rounded-2xl h-72 flex flex-col items-center justify-center relative transition duration-300">
                         <div class="absolute top-3 left-4 text-slate-500 font-black text-2xl">S<?= $i ?></div>
@@ -424,7 +429,7 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
         <div id="gecmis" class="sekme-icerik hidden bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
             <h2 class="text-3xl font-black mb-8 text-gray-800 border-b pb-4"><i class="fa-solid fa-clock-rotate-left text-indigo-500 mr-3"></i>Otopark Kullanım Geçmişi</h2>
             
-            <?php if($rezervasyon_sorgu->num_rows > 0): ?>
+            <?php if($rezervasyon_sorgu && $rezervasyon_sorgu->num_rows > 0): ?>
                 <div class="space-y-4">
                     <?php while($rez = $rezervasyon_sorgu->fetch_assoc()): ?>
                         <div class="p-6 border-2 border-slate-50 hover:border-slate-200 rounded-2xl bg-white flex flex-col md:flex-row justify-between items-center transition duration-300 shadow-sm relative overflow-hidden">
@@ -471,7 +476,6 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
                                         <i class="fa-solid fa-hourglass-half mr-1"></i> <?= $zaman_metni ?>
                                     </div>
 
-                                    <!-- KAPI KONTROL BUTONLARI EKLENDI -->
                                     <div class="flex gap-2 w-full md:w-auto mt-2">
                                         <button onclick="kapiKontrolUye('<?= $rez['slot_adi'] ?>', 1)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg font-black shadow transition text-xs flex items-center justify-center">
                                             <i class="fa-solid fa-lock-open mr-1"></i> AÇ
