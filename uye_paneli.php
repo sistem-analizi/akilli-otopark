@@ -22,6 +22,14 @@ if(isset($_POST['arac_ekle'])) {
     exit;
 }
 
+if(isset($_GET['arac_sil'])) {
+    $silinecek_id = (int)$_GET['arac_sil'];
+    $sql = "DELETE FROM araclar WHERE id = $silinecek_id AND uye_id = $uye_id";
+    $conn->query($sql);
+    header("Location: uye_paneli.php?basari=arac_silindi");
+    exit;
+}
+
 if(isset($_POST['rezervasyon_yap'])) {
     $slot_adi = $conn->real_escape_string($_POST['slot_adi']);
     $arac_id = (int)$_POST['arac_id'];
@@ -84,8 +92,7 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             "Renault": ["Megane", "Clio", "Symbol", "Taliant", "Captur"],
             "Toyota": ["Corolla", "Yaris", "C-HR", "Hilux"],
             "Volkswagen": ["Golf", "Passat", "Polo", "Tiguan", "T-Roc"],
-            "Togg": ["T10X"],
-            "Cupra":["Born","Formentor","Leon","Terramar","Ateca"]
+            "Togg": ["T10X"]
         };
 
         function markaSecildi() {
@@ -131,14 +138,14 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             document.getElementById('rezervasyon_modal').classList.add('hidden');
         }
         
-       function hesapla() {
-    let sureSecim = document.getElementById('sure_secim');
-    if(sureSecim) {
-        let sure = sureSecim.value;
-        let fiyat = <?= $ayarlar['taban_fiyat'] ?>;
-        document.getElementById('toplam_tutar').innerText = sure * fiyat;
-    }
-}
+        function hesapla() {
+            let sureSecim = document.getElementById('sure_secim');
+            if(sureSecim) {
+                let sure = sureSecim.value;
+                let fiyat = <?= $ayarlar['taban_fiyat'] ?>;
+                document.getElementById('toplam_tutar').innerText = sure * fiyat;
+            }
+        }
     </script>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -311,6 +318,11 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
                                     <div class="absolute top-0 right-0 bg-indigo-500 text-white px-4 py-1 rounded-bl-2xl font-bold text-sm shadow-md">
                                         <?= $arac['yil'] ?>
                                     </div>
+                                    
+                                    <a href="uye_paneli.php?arac_sil=<?= $arac['id'] ?>" onclick="return confirm('Bu aracı silmek istediğinize emin misiniz?');" class="absolute bottom-4 right-4 w-10 h-10 flex items-center justify-center bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition duration-300 shadow-sm cursor-pointer">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </a>
+
                                     <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-indigo-300 group-hover:text-indigo-600 group-hover:scale-110 transition duration-300">
                                         <i class="fa-solid fa-car-side text-3xl"></i>
                                     </div>
