@@ -1,6 +1,4 @@
 <?php
-// Veritabanı bağlantısından hemen sonra
-$conn->query("UPDATE cihaz_kontrol SET slot1 = (SELECT sensor1 FROM sensor_verileri), ...");
 class EnvYukleyici {
     public static function yukle($dosya_yolu) {
         if (!file_exists($dosya_yolu)) {
