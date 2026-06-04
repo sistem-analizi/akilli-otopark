@@ -9,6 +9,23 @@ if (!isset($_SESSION['kullanici_id']) || $_SESSION['rol'] == 'admin') {
 
 $uye_id = $_SESSION['kullanici_id'];
 
+// ÜYE KAPI KONTROL İŞLEMİ (YENİ)
+if(isset($_POST['uye_kapi_kontrol'])) {
+    error_reporting(0);
+    $kapi = $conn->real_escape_string($_POST['kapi_adi']);
+    $durum = (int)$_POST['durum'];
+    
+    // Güvenlik: Kullanıcının gerçekten o kapıda aktif rezervasyonu var mı?
+    $kontrol_sql = "SELECT id FROM rezervasyonlar WHERE slot_adi='$kapi' AND uye_id=$uye_id AND durum='aktif'";
+    if ($conn->query($kontrol_sql)->num_rows > 0) {
+        $conn->query("UPDATE cihaz_kontrol SET $kapi = $durum WHERE id=1");
+        echo "OK";
+    } else {
+        echo "HATA";
+    }
+    exit;
+}
+
 if(isset($_POST['arac_ekle'])) {
     $marka = $conn->real_escape_string($_POST['marka']);
     $model = $conn->real_escape_string($_POST['model']);
@@ -44,6 +61,10 @@ if(isset($_POST['rezervasyon_yap'])) {
     
     $sql = "INSERT INTO rezervasyonlar (uye_id, arac_id, slot_adi, durum, baslangic_saati, sure, bitis_saati, toplam_tutar, odeme_durumu) VALUES ($uye_id, $arac_id, '$slot_adi', 'aktif', '$baslangic', $sure, '$bitis', $toplam_tutar, 'odendi')";
     $conn->query($sql);
+
+    // YENİ: Rezerve edilen kapıyı kullanıcının yönetebilmesi için MANUEL (0) moda al
+    $conn->query("UPDATE cihaz_kontrol SET {$slot_adi}_mod = 0 WHERE id=1");
+
     header("Location: uye_paneli.php?basari=rezerve_edildi");
     exit;
 }
@@ -51,6 +72,15 @@ if(isset($_POST['rezervasyon_yap'])) {
 if(isset($_GET['erken_cikis'])) {
     $rez_id = (int)$_GET['erken_cikis'];
     $simdi = date('Y-m-d H:i:s');
+
+    // YENİ: Çıkış yapıldığında kapıyı tekrar sensörlerin (OTOMATİK) yönetebilmesi için 1 yap
+    $rez_sorgu = $conn->query("SELECT slot_adi FROM rezervasyonlar WHERE id = $rez_id AND uye_id = $uye_id");
+    if($rez_sorgu->num_rows > 0) {
+        $rez_bilgi = $rez_sorgu->fetch_assoc();
+        $slot_ad = $rez_bilgi['slot_adi'];
+        $conn->query("UPDATE cihaz_kontrol SET {$slot_ad}_mod = 1, {$slot_ad} = 0 WHERE id=1");
+    }
+
     $sql = "UPDATE rezervasyonlar SET durum = 'tamamlandi', bitis_saati = '$simdi' WHERE id = $rez_id AND uye_id = $uye_id";
     $conn->query($sql);
     header("Location: uye_paneli.php?basari=erken_cikis");
@@ -162,6 +192,32 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
                 let fiyat = <?= isset($ayarlar['taban_fiyat']) ? (int)$ayarlar['taban_fiyat'] : 50 ?>;
                 tutarAlan.innerText = sure * fiyat;
             }
+        }
+
+        // YENİ: KAPI AÇMA/KAPAMA AJAX FONKSİYONU
+        function kapiKontrolUye(kapiAdi, durum) {
+            let formData = new FormData();
+            formData.append('uye_kapi_kontrol', '1');
+            formData.append('kapi_adi', kapiAdi);
+            formData.append('durum', durum);
+
+            fetch('uye_paneli.php', { method: 'POST', body: formData })
+            .then(response => response.text())
+            .then(data => {
+                if(data.trim() === 'OK') {
+                    // Kullanıcıya hissettirmek için ufak bir bekleme efekti
+                    let buton = event.currentTarget;
+                    let orijinalIcerik = buton.innerHTML;
+                    buton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İletiliyor...';
+                    
+                    setTimeout(() => {
+                        buton.innerHTML = orijinalIcerik;
+                        alert(durum === 1 ? 'Sinyal gönderildi: Bariyer Açılıyor' : 'Sinyal gönderildi: Bariyer Kapatılıyor');
+                    }, 500);
+                } else {
+                    alert('İşlem başarısız. Rezervasyon süreniz dolmuş olabilir.');
+                }
+            });
         }
     </script>
 </head>
@@ -414,7 +470,18 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
                                     <div class="font-black text-sm <?= $zaman_renk ?> bg-slate-50 px-3 py-1 rounded border border-slate-200">
                                         <i class="fa-solid fa-hourglass-half mr-1"></i> <?= $zaman_metni ?>
                                     </div>
-                                    <a href="uye_paneli.php?erken_cikis=<?= $rez['id'] ?>" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-black shadow transition text-sm flex items-center mt-1 w-full md:w-auto justify-center">
+
+                                    <!-- KAPI KONTROL BUTONLARI EKLENDI -->
+                                    <div class="flex gap-2 w-full md:w-auto mt-2">
+                                        <button onclick="kapiKontrolUye('<?= $rez['slot_adi'] ?>', 1)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-lg font-black shadow transition text-xs flex items-center justify-center">
+                                            <i class="fa-solid fa-lock-open mr-1"></i> AÇ
+                                        </button>
+                                        <button onclick="kapiKontrolUye('<?= $rez['slot_adi'] ?>', 0)" class="flex-1 bg-slate-500 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-black shadow transition text-xs flex items-center justify-center">
+                                            <i class="fa-solid fa-lock mr-1"></i> KAPAT
+                                        </button>
+                                    </div>
+
+                                    <a href="uye_paneli.php?erken_cikis=<?= $rez['id'] ?>" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-black shadow transition text-sm flex items-center mt-2 w-full md:w-auto justify-center">
                                         <i class="fa-solid fa-door-open mr-2"></i>Erken Çıkış Yap
                                     </a>
                                 <?php endif; ?>
