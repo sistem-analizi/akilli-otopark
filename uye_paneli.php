@@ -92,7 +92,8 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             "Renault": ["Megane", "Clio", "Symbol", "Taliant", "Captur"],
             "Toyota": ["Corolla", "Yaris", "C-HR", "Hilux"],
             "Volkswagen": ["Golf", "Passat", "Polo", "Tiguan", "T-Roc"],
-            "Togg": ["T10X"]
+            "Togg": ["T10X"],
+            "Cupra":{"Born","Formentor","Leon","Terramar","Ateca"]
         };
 
         function markaSecildi() {
@@ -138,13 +139,14 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             document.getElementById('rezervasyon_modal').classList.add('hidden');
         }
         
-        function hesapla() {
-            let sureSecim = document.getElementById('sure_secim');
-            if(sureSecim) {
-                let sure = sureSecim.value;
-                let fiyat = <?= $ayarlar['taban_fiyat'] ?>;
-                document.getElementById('toplam_tutar').innerText = sure * fiyat;
-            }
+      function hesapla() {
+    let sureSecim = document.getElementById('sure_secim');
+    if(sureSecim) {
+        let sure = sureSecim.value;
+        let fiyat = <?= $ayarlar['taban_fiyat'] ?>;
+        document.getElementById('toplam_tutar').innerText = sure * fiyat;
+    }
+}
         }
     </script>
 </head>
