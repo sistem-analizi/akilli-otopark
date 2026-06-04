@@ -84,7 +84,8 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             "Renault": ["Megane", "Clio", "Symbol", "Taliant", "Captur"],
             "Toyota": ["Corolla", "Yaris", "C-HR", "Hilux"],
             "Volkswagen": ["Golf", "Passat", "Polo", "Tiguan", "T-Roc"],
-            "Togg": ["T10X"]
+            "Togg": ["T10X"],
+            "Cupra":["Born","Formentor","Leon","Terramar","Ateca"]
         };
 
         function markaSecildi() {
