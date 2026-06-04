@@ -130,11 +130,14 @@ $ayarlar = $ayarlar_sorgu->fetch_assoc();
             document.getElementById('rezervasyon_modal').classList.add('hidden');
         }
         
-        function hesapla() {
-            let sure = document.getElementById('sure_secim').value;
-            let fiyat = <?= $ayarlar['taban_fiyat'] ?>;
-            document.getElementById('toplam_tutar').innerText = sure * fiyat;
-        }
+       function hesapla() {
+    let sureSecim = document.getElementById('sure_secim');
+    if(sureSecim) {
+        let sure = sureSecim.value;
+        let fiyat = <?= $ayarlar['taban_fiyat'] ?>;
+        document.getElementById('toplam_tutar').innerText = sure * fiyat;
+    }
+}
     </script>
 </head>
 <body class="bg-slate-50 min-h-screen">
