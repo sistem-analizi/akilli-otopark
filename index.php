@@ -1,4 +1,8 @@
 <?php
+include 'baglanti.php';
+@$conn->query("ALTER TABLE rezervasyonlar ADD COLUMN sure INTEGER DEFAULT 1");
+@$conn->query("ALTER TABLE rezervasyonlar ADD COLUMN bitis_saati DATETIME");
+@$conn->query("ALTER TABLE rezervasyonlar ADD COLUMN odeme_durumu TEXT DEFAULT 'bekliyor'");
 session_start();
 
 if (isset($_SESSION['kullanici_id'])) {
