@@ -52,7 +52,5 @@ CREATE TABLE IF NOT EXISTS cihaz_kontrol (
     mod_durumu INTEGER DEFAULT 0
 );
 
--- İlk kurulumda varsayılan ayarları ekle
 INSERT INTO cihaz_kontrol (taban_fiyat) VALUES (50);
--- Sisteme test edebilmen için varsayılan bir admin ekle (Şifre: 123456)
 INSERT INTO uyeler (isim, soyisim, telefon, eposta, sifre, rol) VALUES ('Admin', 'Sistem', '05550000000', 'admin@otopark.com', 'e10adc3949ba59abbe56e057f20f883e', 'admin');
