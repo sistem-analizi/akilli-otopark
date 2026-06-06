@@ -11,7 +11,7 @@ const char* password = "qazxsw123456";
 
 
 // DÜZELTME: http:// sonrasındaki boşluk silindi, yoksa ESP sunucuyu bulamaz.
-const String sunucuURL = "http://192.168.1.107/otopark/api.php"; 
+const String sunucuURL = "https://proje.kamilakgun.com.tr/2026/akilli-otopark/"; 
 
 #define i2c_Address 0x3c 
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &Wire, -1);
